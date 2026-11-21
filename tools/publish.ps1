@@ -26,10 +26,15 @@ if (-not (Test-Path ".git")) {
 
 Write-Step "读取令牌"
 Write-Host "   需要 classic PAT（勾选 repo）或 fine-grained（Contents + Administration 读写）"
-$sec  = Read-Host "   粘贴 GitHub token（输入不可见）" -AsSecureString
-$bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
-$token = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+
+if ($env:GH_TOKEN) {
+    $token = $env:GH_TOKEN
+} else {
+    $sec  = Read-Host "   粘贴 GitHub token（输入不可见）" -AsSecureString
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
+    $token = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+}
 
 if ([string]::IsNullOrWhiteSpace($token)) { throw "令牌为空" }
 
