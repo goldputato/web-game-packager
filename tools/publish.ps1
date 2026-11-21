@@ -1,4 +1,4 @@
-# 一键发布到 GitHub
+﻿# 一键发布到 GitHub
 #
 # 用法：在仓库根目录右键「使用 PowerShell 运行」，或执行
 #     powershell -ExecutionPolicy Bypass -File tools/publish.ps1
@@ -89,7 +89,7 @@ $b64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token
 
 git remote remove origin 2>$null | Out-Null
 git remote add origin "https://github.com/$($me.login)/$RepoName.git"
-git -c http.extraheader="AUTHORIZATION: basic $b64" push -u origin "HEAD:$Branch" --quiet
+git -c credential.helper= -c http.extraheader="AUTHORIZATION: basic $b64" push -u origin "HEAD:$Branch" --quiet
 if ($LASTEXITCODE -ne 0) { throw "git push 失败（检查令牌是否有 repo / Contents 写权限）" }
 Write-Ok "已推送到 $Branch"
 

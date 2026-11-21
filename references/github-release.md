@@ -64,7 +64,10 @@ npx electron-builder --win portable --x64
 Keep the attribution block. Redistributing someone else's assets without credit is both
 rude and a takedown magnet.
 
-## Release workflow
+## Release workflow (template)
+
+`references/release-workflow.yml` 是可直接启用的 GitHub Actions 工作流。
+要用它：复制到 `.github/workflows/release.yml` 后提交（推送含 workflow 的文件需要 token 带 `workflow` 权限）。
 
 ```yaml
 name: build
