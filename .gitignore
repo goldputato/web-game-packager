@@ -1,0 +1,10 @@
+node_modules/
+release/
+app/game/
+*.exe
+*.7z
+_urls.json
+_texts.json
+_*.png
+.DS_Store
+Thumbs.db

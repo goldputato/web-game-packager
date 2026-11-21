@@ -1,0 +1,40 @@
+name: build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        working-directory: app
+        run: npm i --no-audit --no-fund
+
+      - name: Build portable
+        working-directory: app
+        run: npx electron-builder --win portable --x64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exe
+          path: release/*.exe
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
+          body: |
+            离线桌面版构建。
+            资源与版权归原作者所有；本构建仅提供打包与本地化。
