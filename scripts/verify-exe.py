@@ -18,6 +18,10 @@ from ctypes import wintypes
 
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
+kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+BROWSERS = ("chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe")
 user32.SetProcessDPIAware()
 
 SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW = 0x0002, 0x0001, 0x0040
@@ -32,7 +36,24 @@ class BIH(ctypes.Structure):
     ]
 
 
-def find_window(needles):
+def process_image(hwnd):
+    """窗口所属进程的可执行文件路径，用于避免误抓同名标题的浏览器窗口。"""
+    pid = wintypes.DWORD()
+    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+    if not handle:
+        return ""
+    try:
+        buf = ctypes.create_unicode_buffer(1024)
+        size = wintypes.DWORD(1024)
+        if kernel32.QueryFullProcessImageNameW(handle, 0, buf, ctypes.byref(size)):
+            return buf.value
+        return ""
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def find_window(needles, exe_stem):
     hits = []
 
     @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
@@ -45,11 +66,19 @@ def find_window(needles):
         buf = ctypes.create_unicode_buffer(n + 1)
         user32.GetWindowTextW(hwnd, buf, n + 1)
         title = buf.value.lower()
-        if any(x.lower() in title for x in needles):
-            cr = wintypes.RECT()
-            user32.GetClientRect(hwnd, ctypes.byref(cr))
-            if cr.right - cr.left > 600 and cr.bottom - cr.top > 400:
-                hits.append(hwnd)
+        cr = wintypes.RECT()
+        user32.GetClientRect(hwnd, ctypes.byref(cr))
+        if cr.right - cr.left <= 600 or cr.bottom - cr.top <= 400:
+            return True
+
+        image = process_image(hwnd).lower()
+        name = os.path.basename(image)
+
+        # 优先认进程：标题可能被本地化、被网页覆盖，浏览器也可能撞标题
+        if exe_stem and name == exe_stem:
+            hits.append(hwnd)
+        elif any(x.lower() in title for x in needles) and name not in BROWSERS:
+            hits.append(hwnd)
         return True
 
     user32.EnumWindows(cb, 0)
@@ -109,10 +138,11 @@ def main() -> int:
     print("launching…")
     proc = subprocess.Popen([exe], cwd=os.path.dirname(exe), env=env)
 
+    exe_stem = os.path.basename(exe).lower()
     needles = args.title or [os.path.splitext(os.path.basename(exe))[0]]
     hwnd, deadline = None, time.time() + args.timeout
     while time.time() < deadline:
-        hits = find_window(needles)
+        hits = find_window(needles, exe_stem)
         if hits:
             hwnd = hits[0]
             break
