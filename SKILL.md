@@ -1,5 +1,6 @@
 ---
 name: web-game-packager
+display_name: 网页游戏打包器
 description: Turns a publicly playable web game or WebGL/WebGPU demo into a single-file portable Windows EXE with a proper icon and fully offline assets, and can localize an English interface into Chinese by patching the site's own JavaScript. This skill should be used when the user supplies a game URL and asks to download, mirror, bundle, wrap, package or "打包" it as a desktop app (网页游戏转 EXE、在线游戏做成桌面版、离线可玩、扒站、整站下载、electron 打包); when the packaged result must be fully localized ("汉化", "全中文", "不要英文", 界面与剧情翻译); or when such a build must be prepared for GitHub release (发布到 GitHub、打 tag 出自解压安装包).
 agent_created: true
 ---
